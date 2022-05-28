@@ -1,8 +1,0 @@
-passingstring        = "isra"
-vpc_cidr             = "172.30.0.0/16"
-public_subnet1_cidr  = "172.30.0.0/24"
-public_subnet2_cidr  = "172.30.1.0/24"
-public_subnet3_cidr  = "172.30.2.0/24"
-private_subnet1_cidr = "172.30.3.0/24"
-private_subnet2_cidr = "172.30.4.0/24"
-private_subnet3_cidr = "172.30.5.0/24"
