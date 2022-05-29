@@ -14,7 +14,9 @@ resource "aws_launch_configuration" "terraform-launch-configuration" {
   }
 }
 
-#Below the data code that is required by the resource "aws_launch_configuration" (image_id)
+#Use a `data` to get the AMI for the AutoScaling Group
+#Below the data code that is required to complete the above instruction,
+#the data code is required by the resource "aws_launch_configuration" (image_id)
 data "aws_ami" "amazon-linux-2" {
   owners = ["amazon"]
   most_recent = true
