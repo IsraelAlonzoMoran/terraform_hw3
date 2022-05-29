@@ -4,10 +4,10 @@ for our EC2 instances we are going to use "Amazon Linux 2 AMI (HVM) - Kernel 5.1
 Instance_type t2.micro
 */
 resource "aws_launch_configuration" "terraform-launch-configuration" {
-  name_prefix            = "israel-terraform-asg-template-t2micro"
-  image_id               = "ami-0ca285d4c2cda3300"
-  instance_type          = var.instance_type
-  security_groups        = [var.terraform-allow-tls]
+  name_prefix     = "israel-terraform-asg-template-t2micro"
+  image_id        = "ami-0ca285d4c2cda3300"
+  instance_type   = var.instance_type
+  security_groups = [var.terraform-allow-tls]
 
   lifecycle {
     create_before_destroy = true

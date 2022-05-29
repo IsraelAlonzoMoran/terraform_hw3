@@ -42,9 +42,9 @@
 
 In the project folder called "terraform_hw3", inside it, we have a main file called "terraform_hw3.tf", in this file we are going to add the path of each module, this way from this main file we are going to be able to call each module and be able to pass values to each variables.tf file that we have defined in each module, this will help to communicate/connect our modules. The variables name that we have in each module needs to be added to the main file as well, this way the variables can receive the respective values as needed. When adding the variables in the main file make sure to include the module reference if using a module outputs.tf file to get the id, name, etc from other modules.
 
-Here we hve the main file "terraform_hw3.ft.
+Here we have the main file "terraform_hw3.ft.
 
-Just to show some code from the main file. Here we have the provider in this case AWS, we are also adding the region that we are using for this project (Oregon us-west-2), from here we are also passing the values for the vpc_cidr, the cidr for the 3 public subnest and 3 private subnets. From here we are passing some values to the variables we have in each module of the project.
+Just to show some code from the main file. Here we have the provider in this case AWS, we are also adding the region that we are using for this project (Oregon us-west-2), from here we are also passing the values for the vpc_module, values for the variable vpc_cidr, for the variable called region-availability-zones. From this main file we are passing some values to the variables we have in each module of the project.
 
 ```bash
 terraform {
@@ -58,55 +58,59 @@ terraform {
 
 # Configure the AWS Provider
 provider "aws" {
-    region = var.aws_region
+  region = var.aws_region
 }
 
 # Calling the VPC_Module
 module "terraform_vpc_hw3" {
-  source = "./modules/vpc_module"
-  vpc_cidr = "172.30.0.0/16"
-  public_subnet1_cidr = "172.30.0.0/24"
-  public_subnet2_cidr = "172.30.1.0/24"
-  public_subnet3_cidr = "172.30.2.0/24"
-  private_subnet1_cidr  = "172.30.3.0/24"
-  private_subnet2_cidr  = "172.30.4.0/24"
-  private_subnet3_cidr  = "172.30.5.0/24"
+  source                    = "./modules/vpc_module"
+  vpc_cidr                  = "172.30.0.0/16"
+  region-availability-zones = ["us-west-2a", "us-west-2b", "us-west-2c", "us-west-2d"]
 }
 
 # Calling the Launch_Configuration_Module
 module "terraform_launch_configuration_hw3" {
-  source = "./modules/launch_configuration_module"
-  instance_type = "t2.micro"
+  source              = "./modules/launch_configuration_module"
+  instance_type       = "t2.micro"
   terraform-allow-tls = module.terraform_sg_hw3.terraform-allow-tls
 }
 
 # Calling the Autoscaling_Group_Module
 module "terraform_autoscaling_group_hw3" {
-  source = "./modules/autoscaling_group_module"
-  terraform-private-subnet-1_id = module.terraform_vpc_hw3.terraform-private-subnet-1_id
-  terraform-private-subnet-2_id = module.terraform_vpc_hw3.terraform-private-subnet-2_id
-  terraform-private-subnet-3_id = module.terraform_vpc_hw3.terraform-private-subnet-3_id
+  source                         = "./modules/autoscaling_group_module"
   terraform-launch-configuration = module.terraform_launch_configuration_hw3.terraform-launch-configuration
+  terraform-private-subnet       = module.terraform_vpc_hw3.terraform-private-subnet
 }
 
 # Calling the Security Group Module
 module "terraform_sg_hw3" {
-  source = "./modules/sg_module"
-  terraform_vpc_id  = module.terraform_vpc_hw3.terraform_vpc_id
-  name = "terraform_sg_hw"
-  port = 8080
+  source           = "./modules/sg_module"
+  terraform_vpc_id = module.terraform_vpc_hw3.terraform_vpc_id
+  name             = "terraform_sg_hw"
+  port             = 8080
 }
 
 ```
 #
 ## VPC Module
 
-In the vpc_module you are going to find the Terraform code to create an AWS VPC, internet_gateway, 3 public subnets, 3 private subnets, 2 RouteTables (1 public and 1 private), an Elastic IP, NAT Gateway and the respective associations between the resources.
+In the vpc_module you are going to find the Terraform code to create an AWS VPC, internet_gateway, public subnets, private subnets, 2 RouteTables (1 public and 1 private), an Elastic IP, NAT Gateway and the respective associations between the resources.
+
+In the VPC Module we are also using some Terraform Functions like cidrsubnet, index, element, length, we are using these functions to generate dynamic CIDR for the subnets as well as iterate to create a number of public and private subnets equal to the number of availability zones the Region has, to complete these 2 instrucstions we are using Terraform functions .
 
 For example in the vpc_modue(resources.tf), in this file, you are going to find the Terraform code that was used to create the AWS VPC. In this example "terraform-vpc" is the name that is been used as the VPC id, if you want to reference the VPC by the id, "terraform-pvc" needs to be used, this can be any other name/words you would like to add there, make sure to add a cidr_block, in this case, we are using a variable called "vpc_cidr", the variable is in the same vpc_module, when using variables make sure to include var.(follow by the variable name as showing below). You can also include tags for the VPC, here the tag is "israel-terraform-vpc", can be any other name, also as described below this is how you enable dns_support and dns_hostname for the VPC.
+
+The code below needs to be in the vpc_module(variables.tf). Terraform variables, this variable is used for the vpc cidr_block.
 ```bash
-# This code needs to be in the vpc_module(resources.tf)
-# Terraform resources, to Create a AWS VPC
+
+variable "vpc_cidr" {
+  default = "172.30.0.0/16"
+}
+```
+The code below needs to be in the vpc_module(resources.tf)
+```bash
+
+# Terraform resources, to Create an AWS VPC
 # The cidr_block value is defined in the project main file called "terraform-hw3.tf", this main file is pasing the value to the variable defined in vpc_module(variables.tf).
 resource "aws_vpc" "terraform-vpc" {
     
@@ -121,15 +125,87 @@ resource "aws_vpc" "terraform-vpc" {
 }
 ```
 
-This code needs to be in the vpc_module(variables.tf). Terraform variables, this variable is used for the vpc cidr_bock.
-```bash
+### Here we have 2 instructions to create the subnets for this project, we completed these 2 instructions with the code below.
+- Generate dynamic CIDR for the subnets using Terraform functions.
+- Iterate to create a number of public and private subnets equal to the number of availability zones the Region has.
 
-variable "vpc_cidr" {
-  default = "172.30.0.0/16"
+#### Generate dynamic CIDR for the subnets using Terraform functions.
+#
+
+ For this part we are using Terraform Function(IP Network Functions; cidrsubnet), this function helps to calculate a subnet address within given IP network address prefix.
+ ```bash
+ cidrsubnet(prefix, newbits, netnum)
+ ```
+ First, "prefix" must be given in CIDR notation, in this project is the vpc_cidr, and here "prefix" is "aws_vpc.terraform-vpc.cidr_block".
+ 
+ Then we have "newbits", newbits is for the number of additional bits with which to extend the prefix. For example, in this project we are using a prefix ending in /16 and a newbits value of 8, the resulting subnet address will have length /24.
+ 
+ The last part is "netnum", netnum is a whole number that can be represented as a binary integer with no more than newbits binary digits, which will be used to populate the additional bits added to the prefix. In this project we are using netnum (including count.index), this is to let the netnum to start at zero, but then add value of 10 for the public subnets and add 20 for the private subnets.
+ 
+#### Iterate to create a number of public and private subnets equal to the number of availability zones the Region has.
+#
+Based on this other instruction that the project should be able to do. This instruction was completed using Terraform Function(Collection Function; length, index), with length we get the length of the list that we have in the variable called "region-availability-zones",cause in the variable "region-availability-zones", we have all the Availability Zones that are in the Oregon region (us-west-2) and index finds the element index for a given value in a list, it was to loop through the variable list.
+
+* Create public subnets(4 public subnets are going to be created based that the Oregon region us-west-2 only has 4 Availability zones): One public subnet for each given AZ.
+
+
+Below the public subnets cidr that are going to be created. Starting at 10, 11, 12 and 13 cause we indicated in the netnum to start at 10. After the count.index started from zero_based.
+```bash
+	
+#israel-terraform-public-subnet-0	172.30.10.0/24 us-west-2a	us-west-2
+#israel-terraform-public-subnet-1   172.30.11.0/24 us-west-2b	us-west-2	
+#israel-terraform-public-subnet-2	172.30.12.0/24 us-west-2c	us-west-2
+#israel-terraform-public-subnet-3	172.30.13.0/24 us-west-2d	us-west-2	
+
+resource "aws_subnet" "terraform-public-subnet" {
+  count      = length(var.region-availability-zones)
+  vpc_id     = aws_vpc.terraform-vpc.id
+  cidr_block = cidrsubnet(aws_vpc.terraform-vpc.cidr_block, 8, count.index + 10)
+  #Here we are also using Terraform Function(Collection Function; index) index finds the element index for a given value in a list.
+  #index is been used here to find each availability zone that is in the list (variable (region-availability-zones))
+  availability_zone       = var.region-availability-zones[count.index]
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "israel-terraform-public-subnet-${count.index}"
+  }
 }
 ```
+* Create private subnets(4 private subnets are going to be created based that the Oregon region us-west-2 only has 4 Availability zones): One private subnet for each given AZ.
 
-Add this code in the vpc_module(outputs.tf). Terraform outputs, here we add information that we want to export. Can be used as variable in other modules as well.
+
+Below the private subnets cidr that are going to be created. Starting at 20, 21, 22 and 23 cause we indicated in the netnum to start at 20. After the count.index started from zero_based.
+```bash
+
+#israel-terraform-private-subnet-0 172.30.20.0/24 us-west-2a	us-west-2
+#israel-terraform-private-subnet-1 172.30.21.0/24 us-west-2b	us-west-2
+#israel-terraform-private-subnet-2 172.30.22.0/24 us-west-2c	us-west-2
+#israel-terraform-private-subnet-3 172.30.23.0/24 us-west-2d	us-west-2
+
+resource "aws_subnet" "terraform-private-subnet" {
+  count                   = length(var.region-availability-zones)
+  vpc_id                  = aws_vpc.terraform-vpc.id
+  cidr_block              = cidrsubnet(aws_vpc.terraform-vpc.cidr_block, 8, count.index + 20)
+  availability_zone       = var.region-availability-zones[count.index]
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "israel-terraform-private-subnet-${count.index}"
+  }
+}
+
+```
+The Terraform Function "element" was used in this project as well, element retrieves a single element from a list, here was used to associate the subnets to the Route Tables, to the NAT Gateway for example, as shown below.
+```bash
+# Association (All private Subnets to the private Route Table)
+resource "aws_route_table_association" "terraform-private-route-table-to-private-subnet" {
+  count          = length(var.region-availability-zones)
+  subnet_id      = element(aws_subnet.terraform-private-subnet.*.id, count.index)
+  route_table_id = aws_route_table.terraform-private-route-table.id
+
+}
+```
+Add the code below in the vpc_module(outputs.tf). Terraform outputs, here we add information that we want to export. Can be used as variable in other modules as well.
 ```bash
 output "terraform_vpc_id" {
   value = aws_vpc.terraform-vpc.id
@@ -193,7 +269,7 @@ Below we have 2 variables, 1 to indicate the instance type and the other to be a
 ```bash
 variable "instance_type" {
     type = string
-    description = "EC2 instance type for the terraform aws launch configuration"
+    description = "EC2 instance type for the Terraform AWS launch configuration"
     default = "t2.micro"
 }
 
@@ -205,7 +281,7 @@ variable "terraform-allow-tls" {
  Below the Launch-configuration setting, we are also using 2 variables, 1 for the instance_type and 1 for the security group, to launch the EC2 instances we are going to use "Amazon Linux 2 AMI (HVM) - Kernel 5.10, SSD Volume Type - ami-0ca285d4c2cda3300 (64-bit x86)", instance_type t2.micro.
 
 ```bash
-#This terraform code needs to be inside the resources.tf file.
+#This Terraform code needs to be inside the resources.tf file.
 resource "aws_launch_configuration" "terraform-launch-configuration" {
   name_prefix            = "israel-terraform-asg-template-t2micro"
   image_id               = "ami-0ca285d4c2cda3300"
@@ -230,53 +306,41 @@ output "terraform-launch-configuration" {
 ## Autoscaling Group Module
 
 
-Here we have the Autoscaling_Group, the variable called "var.terraform-launch-configuration" allow to use the launch-configuration that we have in the other module called  "launch_configuration_module" but, to be able to use it we need to add "terraform-launch-configuration" as variable in this module, variable as type string, here we are also using 3 variables; 1 for each private subnets from the VPC we have in the module called "vpc_module".
+Here we have the Autoscaling Group, the variable called "var.terraform-launch-configuration" allow to use the launch-configuration that we have in the other module called  "launch_configuration_module" but, to be able to use it we need to add "terraform-launch-configuration" as variable in this module, variable as type string, here we are also using a variable called "terraform-private-subnet" this is to allow the Autoscaling Group to launch EC2 instances in the private subnets only from the VPC we have in the module called "vpc_module".
 
 Here in the variables.tf file we have the variables for the autoscaling group.
 
 ```bash
-#This is the variable we need to be able to use the launch-configuration for the autoscaling group to be able to launch automatically the EC2 instances in any of the 3 private subnets.
+#This is the variable we need to be able to use the launch-configuration for the autoscaling group to be able to launch automatically the EC2 instances in the private subnets.
+
+variable "terraform-private-subnet" {
+  type = set(string)
+}
+
 variable "terraform-launch-configuration" {
   type = string
 
 }
-
-variable "terraform-private-subnet-1_id" {
-  type = string
-  
-}
-
-variable "terraform-private-subnet-2_id" {
-  type = string
-  
-}
-
-variable "terraform-private-subnet-3_id" {
-  type = string
-  
-}
-
 ```
-
-The Autoscaling Group as shown below is going to let us launch 2 EC2 instances cause we have our min, max, and desired capacity as 2, this means that if for some reason an EC2 instance is stopped or terminated the Autoscaling Group is going to launch a new EC2 instance automatically. Main reason why we are using it here to help us to avoid having system downtime, we are also using 3 availability zones here cause we have the subnets in differnt availability zones, this way the EC2 instance t2.micro can be launch in any of these 3 Availability zones this is also to prevent system downtime caused by outages.
+The Autoscaling Group as shown below is going to let us launch 2 EC2 instances cause we have our min, max, and desired capacity as 2, this means that if for some reason an EC2 instance is stopped or terminated the Autoscaling Group is going to launch a new EC2 instance automatically. Main reason why we are using it here to help us to avoid having system downtime, 4 availability zones here cause we have the private subnets in different availability zones, this way the EC2 instance can be launch in any of the Availability zones this is also to prevent system downtime caused by outages.
 ```bash
 resource "aws_autoscaling_group" "terraform-asg" {
-  name = "israel-terraform-asg-hw3"
-  vpc_zone_identifier = [var.terraform-private-subnet-1_id, var.terraform-private-subnet-2_id, var.terraform-private-subnet-3_id]
-  launch_configuration = var.terraform-launch-configuration
-  desired_capacity   = 2
-  max_size           = 2
-  min_size           = 2
+  name                      = "israel-terraform-asg-hw3"
+  vpc_zone_identifier       = var.terraform-private-subnet
+  launch_configuration      = var.terraform-launch-configuration
+  desired_capacity          = 2
+  max_size                  = 2
+  min_size                  = 2
   health_check_grace_period = 300
-  health_check_type = "EC2"
-  force_delete = true
-  
+  health_check_type         = "EC2"
+  force_delete              = true
 
   tag {
     key                 = "Name"
     value               = "israel-terraform-asg-for-EC2-instance"
     propagate_at_launch = true
   }
+
 }
 ```
 And this is the last part of the Autoscaling Group.
