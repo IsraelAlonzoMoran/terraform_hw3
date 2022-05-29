@@ -284,13 +284,49 @@ variable "terraform-allow-tls" {
 }
 
 ```
- Below the Launch-configuration setting, we are also using 2 variables, 1 for the instance_type and 1 for the security group, to launch the EC2 instances we are going to use "Amazon Linux 2 AMI (HVM) - Kernel 5.10, SSD Volume Type - ami-0ca285d4c2cda3300 (64-bit x86)", instance_type t2.micro.
+ Below the Launch-configuration setting, we are also using 2 variables, 1 for the instance_type and 1 for the security group, to launch the EC2 instances we are going to use "Amazon Linux 2 AMI (HVM),(64-bit x86)", instance_type t2.micro.
+#### Use a `data` to get the AMI for the AutoScaling Group
+#
+Below the data code that helps to complete the above instruction.
+
+The data code is required by the resource "aws_launch_configuration" (image_id).
+```bash
+#This Terraform code needs to be inside the resources.tf file.
+data "aws_ami" "amazon-linux-2" {
+  owners = ["amazon"]
+  most_recent = true
+
+  filter {
+   name   = "owner-alias"
+   values = ["amazon"]
+ }
+
+
+ filter {
+   name   = "name"
+   values = ["amzn2-ami-hvm*"]
+ }
+
+  filter {
+    name = "root-device-type"
+    values = ["ebs"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+}
+```
 
 ```bash
 #This Terraform code needs to be inside the resources.tf file.
+#Here we have to add the data code in the image_id, as shown below.
+#image_id = data.aws_ami.amazon-linux-2.id
 resource "aws_launch_configuration" "terraform-launch-configuration" {
   name_prefix            = "israel-terraform-asg-template-t2micro"
-  image_id               = "ami-0ca285d4c2cda3300"
+  image_id               = data.aws_ami.amazon-linux-2.id
   instance_type          = var.instance_type
   security_groups        = [var.terraform-allow-tls]
 
@@ -298,7 +334,6 @@ resource "aws_launch_configuration" "terraform-launch-configuration" {
     create_before_destroy = true
   }
 }
-
 ```
 Terraform outputs, here we are adding "terraform-launch-configuration.name", using .name cause this is what the autoscaling group needs to recognize the launch-configuration that we have in this module(resources.tf) file.
 ```bash
