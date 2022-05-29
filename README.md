@@ -153,7 +153,7 @@ Below the public subnets cidr that are going to be created. Starting at 10, 11, 
 ```bash
 	
 #israel-terraform-public-subnet-0	172.30.10.0/24 us-west-2a	us-west-2
-#israel-terraform-public-subnet-1 172.30.11.0/24 us-west-2b	us-west-2	
+#israel-terraform-public-subnet-1    172.30.11.0/24 us-west-2b	us-west-2	
 #israel-terraform-public-subnet-2	172.30.12.0/24 us-west-2c	us-west-2
 #israel-terraform-public-subnet-3	172.30.13.0/24 us-west-2d	us-west-2	
 
