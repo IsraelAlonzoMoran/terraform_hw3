@@ -111,7 +111,8 @@ The code below needs to be in the vpc_module(resources.tf)
 ```bash
 
 # Terraform resources, to Create an AWS VPC
-# The cidr_block value is defined in the project main file called "terraform-hw3.tf", this main file is pasing the value to the variable defined in vpc_module(variables.tf).
+# The cidr_block value is defined in the project main file called "terraform-hw3.tf", 
+# this main file is pasing the value to the variable defined in vpc_module(variables.tf).
 resource "aws_vpc" "terraform-vpc" {
     
   cidr_block = var.vpc_cidr
@@ -161,8 +162,10 @@ resource "aws_subnet" "terraform-public-subnet" {
   count      = length(var.region-availability-zones)
   vpc_id     = aws_vpc.terraform-vpc.id
   cidr_block = cidrsubnet(aws_vpc.terraform-vpc.cidr_block, 8, count.index + 10)
-  #Here we are also using Terraform Function(Collection Function; index) index finds the element index for a given value in a list.
-  #index is been used here to find each availability zone that is in the list (variable (region-availability-zones))
+  #Here we are also using Terraform Function(Collection Function; index) 
+  #index finds the element index for a given value in a list.
+  #index is been used here to find each availability zone
+  #that is in the list (variable (region-availability-zones))
   availability_zone       = var.region-availability-zones[count.index]
   map_public_ip_on_launch = true
 
@@ -231,7 +234,10 @@ resource "aws_security_group" "terraform-allow-tls" {
     #As shown here we can use the variable we have in sg_module(variables.tf), var.terraform_vpc_id.
     vpc_id = var.terraform_vpc_id
 
- # Using variables for the ports, these variables need to be declared in the variables.tf file of this same sg_module, and the values can be in the main project directory file called "terraform_hw3.tf" when calling all modules.  The cidr_blocks = ["0.0.0.0/0"] can be customized for the ingress and egress as needed in this project we are not adding restrictions but can be added.
+ # Using variables for the ports, these variables need to be declared in the variables.tf file
+ # of this same sg_module, and the values can be in the main project directory file called "terraform_hw3.tf"
+ # when calling all modules.  The cidr_blocks = ["0.0.0.0/0"] can be customized for the ingress and egress
+ # as needed in this project we are not adding restrictions but can be added.
 ingress {
         description = "tls for VPC"
         from_port   = var.port
@@ -311,7 +317,8 @@ Here we have the Autoscaling Group, the variable called "var.terraform-launch-co
 Here in the variables.tf file we have the variables for the autoscaling group.
 
 ```bash
-#This is the variable we need to be able to use the launch-configuration for the autoscaling group to be able to launch automatically the EC2 instances in the private subnets.
+#This is the variable we need to be able to use the launch-configuration for the autoscaling group
+#to be able to launch automatically the EC2 instances in the private subnets.
 
 variable "terraform-private-subnet" {
   type = set(string)
