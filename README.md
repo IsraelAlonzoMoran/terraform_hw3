@@ -284,45 +284,35 @@ variable "terraform-allow-tls" {
 }
 
 ```
- Below the Launch-configuration setting, we are also using 2 variables, 1 for the instance_type and 1 for the security group, to launch the EC2 instances we are going to use "Amazon Linux 2 AMI (HVM),(64-bit x86)", instance_type t2.micro.
 #### Use a `data` to get the AMI for the AutoScaling Group
 #
+Here in `data` we are adding owners as "amazon" and some filters to get the ID of a registered AMI, using the filters shown below we are going to get the following AMI "Amazon Linux 2 AMI (HVM) - Kernel 4.14, SSD Volume Type - ami-00af37d1144686454 (64-bit x86), gp2", then the `data` will be used in the resources "aws_launch_configuration", image_id as "image_id = data.aws_ami.amazon-linux-2.id".
+
+
 Below the data code that helps to complete the above instruction.
 
-The data code is required by the resource "aws_launch_configuration" (image_id).
 ```bash
 #This Terraform code needs to be inside the resources.tf file.
 data "aws_ami" "amazon-linux-2" {
-  owners = ["amazon"]
+  owners      = ["amazon"]
   most_recent = true
 
   filter {
-   name   = "owner-alias"
-   values = ["amazon"]
- }
-
-
- filter {
-   name   = "name"
-   values = ["amzn2-ami-hvm*"]
- }
-
-  filter {
-    name = "root-device-type"
-    values = ["ebs"]
+    name = "name"
+    values = ["amzn2-ami-hvm-*"]
   }
 
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
   }
-
+  
 }
 ```
-
+Below the Launch-configuration resource, we are also using 2 variables, 1 for the instance_type and 1 for the security group. The EC2 instances are going to be launched as instance_type t2.micro.
 ```bash
 #This Terraform code needs to be inside the resources.tf file.
-#Here we have to add the data code in the image_id, as shown below.
+#Here we need to add the data code in the image_id, as shown below.
 #image_id = data.aws_ami.amazon-linux-2.id
 resource "aws_launch_configuration" "terraform-launch-configuration" {
   name_prefix            = "israel-terraform-asg-template-t2micro"
