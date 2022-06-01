@@ -1,3 +1,9 @@
+# Using Terraform locals to Tag all the "sg_module" resources
+# with the DateTime when they got created
+locals {
+  sg-module-datetime = timestamp()
+  israel-tf          = "israel-terraform"
+}
 #Here we have the security group, we are using here 2 variables for the ingress ports
 resource "aws_security_group" "terraform-allow-tls" {
 
@@ -20,7 +26,7 @@ resource "aws_security_group" "terraform-allow-tls" {
   }
 
   tags = {
-    Name = "israel-terraform-sg"
+    Name = "${local.israel-tf}-sg-${local.sg-module-datetime}"
   }
 
 }

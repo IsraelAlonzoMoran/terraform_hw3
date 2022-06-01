@@ -1,3 +1,9 @@
+# Using Terraform locals to Tag all the "launch_configuration_module" resources
+# with the DateTime when they got created
+locals {
+  lc-module-datetime = timestamp()
+  israel-tf = "israel-terraform"
+}
 /* Here we have the Launch-configuration setting, we are also using 2 variables
 1 for the instance_type and 1 for the security groups
 for our EC2 instances we are going to use "Amazon Linux 2 AMI (HVM) - Kernel 4.14, SSD Volume Type - ami-00af37d1144686454 (64-bit x86), pg2"
@@ -22,7 +28,7 @@ data "aws_ami" "amazon-linux-2" {
   most_recent = true
 
   filter {
-    name = "name"
+    name   = "name"
     values = ["amzn2-ami-hvm-*"]
   }
 
@@ -30,5 +36,5 @@ data "aws_ami" "amazon-linux-2" {
     name   = "virtualization-type"
     values = ["hvm"]
   }
-  
+
 }

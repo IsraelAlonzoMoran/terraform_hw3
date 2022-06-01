@@ -1,3 +1,10 @@
+# Using Terraform locals to Tag all the "vpc_module" resources
+# with the DateTime when they got created
+locals {
+    vpc-module-datetime = timestamp()
+    israel-tf = "israel-terraform" 
+}
+
 # Create a VPC
 resource "aws_vpc" "terraform-vpc" {
   cidr_block           = var.vpc_cidr
@@ -6,16 +13,17 @@ resource "aws_vpc" "terraform-vpc" {
   enable_dns_hostnames = true
 
   tags = {
-    Name = "israel-terraform-vpc"
+    Name = "${local.israel-tf}-vpc-${local.vpc-module-datetime}"
   }
 }
+
 
 #Create a Internet Gateway
 resource "aws_internet_gateway" "terraform-internet-gw" {
   vpc_id = aws_vpc.terraform-vpc.id
 
   tags = {
-    Name = "israel-terraform-internet-gw"
+    Name = "${local.israel-tf}-internet-gw-${local.vpc-module-datetime}"
   }
 }
 
@@ -66,7 +74,7 @@ resource "aws_subnet" "terraform-public-subnet" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "israel-terraform-public-subnet-${count.index}"
+    Name = "${local.israel-tf}-public-subnet-${count.index}-${local.vpc-module-datetime}"
   }
 }
 
@@ -88,7 +96,7 @@ resource "aws_subnet" "terraform-private-subnet" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "israel-terraform-private-subnet-${count.index}"
+    Name = "${local.israel-tf}-private-subnet-${count.index}-${local.vpc-module-datetime}"
   }
 }
 
@@ -104,7 +112,7 @@ resource "aws_route_table" "terraform-public-route-table" {
   }
 
   tags = {
-    Name = "israel-terraform-public-route-table"
+    Name = "${local.israel-tf}-public-route-table-${local.vpc-module-datetime}"
   }
 }
 
@@ -127,7 +135,7 @@ resource "aws_route_table" "terraform-private-route-table" {
   }
 
   tags = {
-    Name = "israel-terraform-private-route-table"
+    Name = "${local.israel-tf}-private-route-table-${local.vpc-module-datetime}"
   }
 }
 
@@ -144,7 +152,7 @@ resource "aws_route_table_association" "terraform-private-route-table-to-private
 resource "aws_eip" "terraform-eip-for-nat-gw" {
   vpc = true
   tags = {
-    Name = "israel-terraform-eip-for-nat-gw"
+    Name = "${local.israel-tf}-eip-for-nat-gw-${local.vpc-module-datetime}"
   }
 }
 
@@ -154,6 +162,6 @@ resource "aws_nat_gateway" "terraform-nat-gw" {
   subnet_id     = element(aws_subnet.terraform-public-subnet.*.id, 0)
   depends_on    = [aws_internet_gateway.terraform-internet-gw]
   tags = {
-    Name = "israel-terraform-nat-gw"
+    Name = "${local.israel-tf}-nat-gw-${local.vpc-module-datetime}"
   }
 }

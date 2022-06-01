@@ -13,10 +13,11 @@
 - Launch Configuration Module
 - Autoscaling Group Module
 - Security Group Module
+- Tag all the resources with the DateTime when they got created (Use Terraform locals)
 - Generate dynamic CIDR for the subnets using Terraform functions
 - Iterate to create a number of public and private subnets equal to the number of availability zones the Region has
 - Use a `data` to get the AMI for the AutoScaling Group
-- Tag all the resources with the DateTime when they got created (Use Terraform locals)
+
 
 #### The Terraform template has the following structure.
 #### Project name "TERRAFORM_HW3" inside of it a folder called modules.
@@ -44,7 +45,7 @@ In the project folder called "terraform_hw3", inside it, we have a main file cal
 
 Here we have the main file "terraform_hw3.ft.
 
-Just to show some code from the main file. Here we have the provider in this case AWS, we are also adding the region that we are using for this project (Oregon us-west-2), from here we are also passing the values for the vpc_module, values for the variable vpc_cidr, for the variable called region-availability-zones. From this main file we are passing some values to the variables we have in each module of the project.
+Just to show some code from the main file. Here we have the provider in this case AWS, we are also adding the region that we are using for this project (Oregon us-west-2), from here we are also passing the values for the vpc_module, values for the variable vpc_cidr, for the variable called "region-availability-zones". From this main file we are passing some values to the variables we have in each module of the project.
 
 ```bash
 terraform {
@@ -98,8 +99,48 @@ In the vpc_module you are going to find the Terraform code to create an AWS VPC,
 
 In the VPC Module we are also using some Terraform Functions like cidrsubnet, index, element, length, we are using these functions to generate dynamic CIDR for the subnets as well as iterate to create a number of public and private subnets equal to the number of availability zones the Region has, to complete these 2 instrucstions we are using Terraform functions .
 
-For example in the vpc_modue(resources.tf), in this file, you are going to find the Terraform code that was used to create the AWS VPC. In this example "terraform-vpc" is the name that is been used as the VPC id, if you want to reference the VPC by the id, "terraform-pvc" needs to be used, this can be any other name/words you would like to add there, make sure to add a cidr_block, in this case, we are using a variable called "vpc_cidr", the variable is in the same vpc_module, when using variables make sure to include var.(follow by the variable name as showing below). You can also include tags for the VPC, here the tag is "israel-terraform-vpc", can be any other name, also as described below this is how you enable dns_support and dns_hostname for the VPC.
+For example in the vpc_module(resources.tf), in this file, you are going to find the Terraform code that was used to create the AWS VPC. In this example "terraform-vpc" is the name that is been used as the VPC id, if you want to reference the VPC by the id, "terraform-pvc" needs to be used, this can be any other name/words you would like to add there, make sure to add a cidr_block, in this case, we are using a variable called "vpc_cidr", the variable is in the same vpc_module, when using variables make sure to include var.(follow by the variable name as shown below). You can include tags for the resources that are going to be created, also as described below you enable dns_support and dns_hostname for the VPC.
 
+### We have an instruction to "Tag all the resources with the DateTime when they got created(Use Terraform locals)".
+#
+To complete this instruction `Terraform Locals` was used as shown below.
+
+Using Terraform locals values; a local value assigns a name to an expression, for this project as expression we are using "timestamp()" cause with "timestamp()" we get the Date and Time when each AWS resource got created. 
+
+For example in the "vpc_module" resources.tf file, the Local values block was declared as NAME = "vpc-module-datetime" and as EXPRESSION = "timestamp()". Once the local value is declared we can reference it in expression as local.NAME. Important note to take in consideration when declaring Local values. Local values are created by a `locals` block as plural, but when we reference them as attributes on an object named `local` as singular. Local value can only be accessed in expressions within the module where it was declared, is also really helpful to avoid repeating the same values multiple times in a configuration, for example to avoid repeating "israel-terraform" we can use NAME = "israel-tf", EXPRESSION = "israel-terraform", then if later on we need to update the value "israel-terraform" we only need to update the EXPRESSION value and all the resources that are referencing these local values are going to get the new values automatically, this is why is really useful. Terraform Local values was used and added in the "resources.tf" file of each module of this project to get the DateTime when each AWS resource got created and also to avoid repeating the string "israel-terraform".
+
+The code below was added in to the vpc_module(resources.tf). Code below to described how to declare the Local values and how to use it for the vpc tags. Same way was used for the rest of AWS resources that were created in this project.
+```bash
+#Declaring a Local Values
+locals {
+    vpc-module-datetime = timestamp()
+    israel-tf = "israel-terraform" 
+}
+
+# Terraform resources, to Create an AWS VPC
+# The cidr_block value is defined in the project main file called "terraform-hw3.tf", 
+# the main file is passing the value to the variable defined in vpc_module(variables.tf).
+resource "aws_vpc" "terraform-vpc" {
+    
+  cidr_block = var.vpc_cidr
+  instance_tenancy ="default"
+  enable_dns_support = true
+  enable_dns_hostnames = true
+  #This is how we reference Local Values, example: ${local.vpc-module-datetime} 
+  tags = {
+    Name = "${local.israel-tf}-vpc-${local.vpc-module-datetime}"
+  }
+}
+
+#Create an Internet Gateway
+resource "aws_internet_gateway" "terraform-internet-gw" {
+  vpc_id = aws_vpc.terraform-vpc.id
+  #This is how we reference Local Values, example: ${local.israel-tf} 
+  tags = {
+    Name = "${local.israel-tf}-internet-gw-${local.vpc-module-datetime}"
+  }
+}
+```
 The code below needs to be in the vpc_module(variables.tf). Terraform variables, this variable is used for the vpc cidr_block.
 ```bash
 
@@ -107,25 +148,6 @@ variable "vpc_cidr" {
   default = "172.30.0.0/16"
 }
 ```
-The code below needs to be in the vpc_module(resources.tf)
-```bash
-
-# Terraform resources, to Create an AWS VPC
-# The cidr_block value is defined in the project main file called "terraform-hw3.tf", 
-# this main file is pasing the value to the variable defined in vpc_module(variables.tf).
-resource "aws_vpc" "terraform-vpc" {
-    
-  cidr_block = var.vpc_cidr
-  instance_tenancy ="default"
-  enable_dns_support = true
-  enable_dns_hostnames = true
-
-  tags = {
-        Name = "israel-terraform-vpc"
-  }
-}
-```
-
 ### Here we have 2 instructions to create the subnets for this project, we completed these 2 instructions with the code below.
 - Generate dynamic CIDR for the subnets using Terraform functions.
 - Iterate to create a number of public and private subnets equal to the number of availability zones the Region has.
@@ -170,7 +192,7 @@ resource "aws_subnet" "terraform-public-subnet" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "israel-terraform-public-subnet-${count.index}"
+    Name = "${local.israel-tf}-public-subnet-${count.index}-${local.vpc-module-datetime}"
   }
 }
 ```
@@ -193,7 +215,7 @@ resource "aws_subnet" "terraform-private-subnet" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "israel-terraform-private-subnet-${count.index}"
+    Name = "${local.israel-tf}-private-subnet-${count.index}-${local.vpc-module-datetime}"
   }
 }
 
@@ -229,11 +251,9 @@ And now we can use the variable that is in the sg_module.
 This is the resources.tf file that is inside the sg_module.
 ```bash
 resource "aws_security_group" "terraform-allow-tls" {
-
     name = var.name
     #As shown here we can use the variable we have in sg_module(variables.tf), var.terraform_vpc_id.
     vpc_id = var.terraform_vpc_id
-
  # Using variables for the ports, these variables need to be declared in the variables.tf file
  # of this same sg_module, and the values can be in the main project directory file called "terraform_hw3.tf"
  # when calling all modules.  The cidr_blocks = ["0.0.0.0/0"] can be customized for the ingress and egress
@@ -253,9 +273,9 @@ egress {
         cidr_blocks = ["0.0.0.0/0"]
 }
 
-        tags = {
-        Name = "israel-terraform-sg"
-  }
+tags = {
+        Name = "${local.israel-tf}-sg-${local.sg-module-datetime}"
+}
 
 }
 ```
@@ -315,15 +335,16 @@ Below the Launch-configuration resource, we are also using 2 variables, 1 for th
 #Here we need to add the data code in the image_id, as shown below.
 #image_id = data.aws_ami.amazon-linux-2.id
 resource "aws_launch_configuration" "terraform-launch-configuration" {
-  name_prefix            = "israel-terraform-asg-template-t2micro"
-  image_id               = data.aws_ami.amazon-linux-2.id
-  instance_type          = var.instance_type
-  security_groups        = [var.terraform-allow-tls]
+  name_prefix     = "israel-terraform-launch-configuration"
+  image_id        = data.aws_ami.amazon-linux-2.id
+  instance_type   = var.instance_type
+  security_groups = [var.terraform-allow-tls]
 
   lifecycle {
     create_before_destroy = true
   }
 }
+
 ```
 Terraform outputs, here we are adding "terraform-launch-configuration.name", using .name cause this is what the autoscaling group needs to recognize the launch-configuration that we have in this module(resources.tf) file.
 ```bash
@@ -369,7 +390,7 @@ resource "aws_autoscaling_group" "terraform-asg" {
 
   tag {
     key                 = "Name"
-    value               = "israel-terraform-asg-for-EC2-instance"
+    value               = "${local.israel-tf}-asg-EC2-instance-${local.asg-module-datetime}"
     propagate_at_launch = true
   }
 
