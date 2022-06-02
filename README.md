@@ -429,22 +429,26 @@ terraform destroy
 ## Below more information about this project
 Steps that can help to prepare the host machine to be able to run the Terraform Template.
 
-Step 1: Download the Terraform package for the OS(this terraform code was tested in Ubuntu-20.04.4-amd64 64-bit) in the following link: https://www.terraform.io/downloads
+Step 1: Download the Terraform package for the OS(this Terraform code was tested in Ubuntu-20.04.4-amd64 64-bit) in the following link: https://www.terraform.io/downloads
 
-Step 2: Unzip the downloaded terraform package(The terraform package will look like "terraform_1.1.9_linux_amd64.zip", unzip it).
+Step 2: Unzip the downloaded Terraform package(The Terraform package will look like "terraform_1.1.9_linux_amd64.zip", unzip it).
 
 Step 3: Once the package is unzipped "terraform_1.1.9_linux_amd64", open it and copy the binary called "terraform", then paste the binary called "terraform" in the host machine path /usr/local/bin.
 
-Step 4: Open the host machine Linux terminal and type $terraform --version (it will show the terraform version).
+Step 4: Open the host machine Linux terminal and type $terraform --version (it will show the Terraform version).
 
 ```bash
 terraform --version
+#You'll see a Terraform version like this(the version number may be different for you)
+Terraform v1.1.9
+on linux_amd64
 ```
 
 Step 5: Open the host machine Linux terminal and type $aws configure(enter the AWS_ACCESS_KEY_ID, then the AWS_SECRET_ACCESS_KEY, hit enter if the region is correct otherwise type(us-west-2), then hit enter again for the output format(these steps will help to test that access to the AWS account is allow, cause to create an aws vpc and the rest of the vpc resources access to the aws account with the right permissions to create resources is required, otherwise create your AWS account with these permissions).
 
 ```bash
 aws configure
+
 ```
 
 Step 6: Clone the terraform_hw3 to your local machine.
@@ -473,6 +477,6 @@ And last if you would like to destroy the AWS infrastructure you just created, r
 terraform destroy
 ```
 
-Step 9: Go to the AWS Console(https://aws.amazon.com/) select Sing in, enter your credentinals, type vpc in the search option and review that the aws vpc and rest of resources have been created.
+Step 9: Go to the AWS Console(https://aws.amazon.com/) select Sing in, enter your credentials, type vpc in the search option and review that the aws vpc and rest of resources have been created.
 
 That's all. Thank you.
