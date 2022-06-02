@@ -1,8 +1,7 @@
-# Using Terraform locals to Tag all the "vpc_module" resources
-# with the DateTime when they got created
+#Using Terraform locals to Tag all the "vpc_module" resources with the DateTime when they got created
 locals {
-    vpc-module-datetime = timestamp()
-    israel-tf = "israel-terraform" 
+  vpc-module-datetime = formatdate("MMMM DD, YYYY hh:mm:ss ZZZ", timestamp())
+  israel-tf           = "israel-terraform"
 }
 
 # Create a VPC
@@ -11,12 +10,12 @@ resource "aws_vpc" "terraform-vpc" {
   instance_tenancy     = "default"
   enable_dns_support   = true
   enable_dns_hostnames = true
-
+  /*Here we are referencing the "local values" as ${local.israel-tf} to get the string "israel-terraform" from the above local values
+  and ${local.vpc-module-datetime} to ge the DateTime with formatdate "formatdate("MMMM DD, YYYY hh:mm:ss ZZZ", timestamp())".*/
   tags = {
     Name = "${local.israel-tf}-vpc-${local.vpc-module-datetime}"
   }
 }
-
 
 #Create a Internet Gateway
 resource "aws_internet_gateway" "terraform-internet-gw" {
@@ -44,7 +43,7 @@ resource "aws_internet_gateway" "terraform-internet-gw" {
   which will be used to populate the additional bits added to the prefix.
   Here in this project we are using netnum (including count.index), this is to let the netnum to start at zero,
   in this project we are letting the netnum to start at zero but then add 10 for the public subnets and add 20 for the private subnets.
- */
+*/
 
 #- Iterate to create a number of public and private subnets equal to the number of availability zones the Region has
 /* Also based on this other instruction that the project should be able to do.
@@ -118,7 +117,7 @@ resource "aws_route_table" "terraform-public-route-table" {
 
 # Associations (All public Subnets to the public Route Table)
 resource "aws_route_table_association" "terraform-public-route-table-to-public-subnet" {
-   count = length(var.region-availability-zones)
+  count = length(var.region-availability-zones)
   #using Function (collection function; element), element retrieves a single element from a list, here is been used for the subnets ids.
   subnet_id      = element(aws_subnet.terraform-public-subnet.*.id, count.index)
   route_table_id = aws_route_table.terraform-public-route-table.id

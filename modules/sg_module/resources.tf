@@ -1,7 +1,6 @@
-# Using Terraform locals to Tag all the "sg_module" resources
-# with the DateTime when they got created
+#Using Terraform locals to Tag the Security Group resource with the DateTime when it got created
 locals {
-  sg-module-datetime = timestamp()
+  sg-module-datetime = formatdate("MMMM DD, YYYY hh:mm:ss ZZZ", timestamp())
   israel-tf          = "israel-terraform"
 }
 #Here we have the security group, we are using here 2 variables for the ingress ports

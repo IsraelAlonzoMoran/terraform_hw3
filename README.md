@@ -20,7 +20,7 @@
 
 
 #### The Terraform template has the following structure.
-#### Project name "TERRAFORM_HW3" inside of it a folder called modules.
+#### Project name "TERRAFORM_HW3" inside it a folder called modules.
 * modules
 * *  vpc_module
 * * - outputs.tf
@@ -45,7 +45,7 @@ In the project folder called "terraform_hw3", inside it, we have a main file cal
 
 Here we have the main file "terraform_hw3.ft.
 
-Just to show some code from the main file. Here we have the provider in this case AWS, we are also adding the region that we are using for this project (Oregon us-west-2), from here we are also passing the values for the vpc_module, values for the variable vpc_cidr, for the variable called "region-availability-zones". From this main file we are passing some values to the variables we have in each module of the project.
+Just to show some code from the main file. Here we are using AWS as the provider, we are also adding the region that we are using for this project (Oregon us-west-2), from here we are also passing values for the vpc_module, values for the variable vpc_cidr, for the variable called "region-availability-zones". From this main file we are passing some values to the variables we have in each module of the project.
 
 ```bash
 terraform {
@@ -95,9 +95,9 @@ module "terraform_sg_hw3" {
 #
 ## VPC Module
 
-In the vpc_module you are going to find the Terraform code to create an AWS VPC, internet_gateway, public subnets, private subnets, 2 RouteTables (1 public and 1 private), an Elastic IP, NAT Gateway and the respective associations between the resources.
+In the vpc_module you are going to find the Terraform code to create an AWS VPC, internet gateway, public subnets, private subnets, 2 RouteTables (1 public and 1 private), an Elastic IP, NAT Gateway and the respective associations between the resources.
 
-In the VPC Module we are also using some Terraform Functions like cidrsubnet, index, element, length, we are using these functions to generate dynamic CIDR for the subnets as well as iterate to create a number of public and private subnets equal to the number of availability zones the Region has, to complete these 2 instrucstions we are using Terraform functions .
+In the VPC Module we are also using some Terraform Functions like cidrsubnet, index, element, length, we are using these functions to generate dynamic CIDR for the subnets as well as iterate to create a number of public and private subnets equal to the number of availability zones the Region has, to complete these 2 instrucstions we are using Terraform Functions.
 
 For example in the vpc_module(resources.tf), in this file, you are going to find the Terraform code that was used to create the AWS VPC. In this example "terraform-vpc" is the name that is been used as the VPC id, if you want to reference the VPC by the id, "terraform-pvc" needs to be used, this can be any other name/words you would like to add there, make sure to add a cidr_block, in this case, we are using a variable called "vpc_cidr", the variable is in the same vpc_module, when using variables make sure to include var.(follow by the variable name as shown below). You can include tags for the resources that are going to be created, also as described below you enable dns_support and dns_hostname for the VPC.
 
@@ -105,19 +105,19 @@ For example in the vpc_module(resources.tf), in this file, you are going to find
 #
 To complete this instruction `Terraform Locals` was used as shown below.
 
-Using Terraform locals values; a local value assigns a name to an expression, for this project as expression we are using "timestamp()" cause with "timestamp()" we get the Date and Time when each AWS resource got created. 
+Using Terraform locals values; a local value assigns a name to an expression, for this project as expression we are using `formatdate(spec, timestamp)` cause with "formatdate(spec, timestamp)"; "spec" helps to give date and time format and with "timestamp()" we get the Date and Time when each AWS resource got created. Below you are going to see the code "formatdate("MMMM DD, YYYY hh:mm:ss ZZZ", timestamp())".
 
-For example in the "vpc_module" resources.tf file, the Local values block was declared as NAME = "vpc-module-datetime" and as EXPRESSION = "timestamp()". Once the local value is declared we can reference it in expression as local.NAME. Important note to take in consideration when declaring Local values. Local values are created by a `locals` block as plural, but when we reference them as attributes on an object named `local` as singular. Local value can only be accessed in expressions within the module where it was declared, is also really helpful to avoid repeating the same values multiple times in a configuration, for example to avoid repeating "israel-terraform" we can use NAME = "israel-tf", EXPRESSION = "israel-terraform", then if later on we need to update the value "israel-terraform" we only need to update the EXPRESSION value and all the resources that are referencing these local values are going to get the new values automatically, this is why is really useful. Terraform Local values was used and added in the "resources.tf" file of each module of this project to get the DateTime when each AWS resource got created and also to avoid repeating the string "israel-terraform".
+For example in the "vpc_module" resources.tf file, the Local values block was declared as NAME = "vpc-module-datetime" and as EXPRESSION = "formatdate("MMMM DD, YYYY hh:mm:ss ZZZ", timestamp())". Once the local value is declared we can reference it in expression as local.NAME. Important note to take in consideration when declaring Local values. Local values are created by a `locals` block as plural, but when we reference them as attributes on an object named `local` as singular. Local value can only be accessed in expressions within the module where it was declared, is also really helpful to avoid repeating the same values multiple times in a configuration, for example to avoid repeating "israel-terraform" we can use NAME = "israel-tf", EXPRESSION = "israel-terraform", then if later on we need to update the value "israel-terraform" we only need to update the EXPRESSION value and all the resources that are referencing these local values are going to get the new values automatically, this is why is really useful. Terraform Local values was used and added in the "resources.tf" file of each module of this project to get the DateTime when each AWS resource got created and also to avoid repeating the string "israel-terraform".
 
-The code below was added in to the vpc_module(resources.tf). Code below to described how to declare the Local values and how to use it for the vpc tags. Same way was used for the rest of AWS resources that were created in this project.
+The code below was added in to the vpc_module(resources.tf). Code below describe how to declare the Local values and how to use it for the VPC tags. Same way was used for the rest of AWS resources that we created in each module of this project.
 ```bash
 #Declaring a Local Values
 locals {
-    vpc-module-datetime = timestamp()
-    israel-tf = "israel-terraform" 
+  vpc-module-datetime = formatdate("MMMM DD, YYYY hh:mm:ss ZZZ", timestamp())
+  israel-tf           = "israel-terraform"
 }
 
-# Terraform resources, to Create an AWS VPC
+# Terraform resource to create an AWS VPC
 # The cidr_block value is defined in the project main file called "terraform-hw3.tf", 
 # the main file is passing the value to the variable defined in vpc_module(variables.tf).
 resource "aws_vpc" "terraform-vpc" {
@@ -163,11 +163,11 @@ variable "vpc_cidr" {
  
  Then we have "newbits", newbits is for the number of additional bits with which to extend the prefix. For example, in this project we are using a prefix ending in /16 and a newbits value of 8, the resulting subnet address will have length /24.
  
- The last part is "netnum", netnum is a whole number that can be represented as a binary integer with no more than newbits binary digits, which will be used to populate the additional bits added to the prefix. In this project we are using netnum (including count.index), this is to let the netnum to start at zero, but then add value of 10 for the public subnets and add 20 for the private subnets.
+ The last part is "netnum", netnum is a whole number that can be represented as a binary integer with no more than newbits binary digits, which will be used to populate the additional bits added to the prefix. We are using netnum (including count.index) to let the netnum to start at zero, but then add value of 10 for the public subnets and add 20 for the private subnets.
  
 #### Iterate to create a number of public and private subnets equal to the number of availability zones the Region has.
 #
-Based on this other instruction that the project should be able to do. This instruction was completed using Terraform Function(Collection Function; length, index), with length we get the length of the list that we have in the variable called "region-availability-zones",cause in the variable "region-availability-zones", we have all the Availability Zones that are in the Oregon region (us-west-2) and index finds the element index for a given value in a list, it was to loop through the variable list.
+Based on this other instruction that the project should be able to do. This instruction was completed using Terraform Function(Collection Function; length, index), with length we get the length of the list that we have in the variable called "region-availability-zones",cause in the variable "region-availability-zones", we have all the Availability Zones that are in the Oregon region (us-west-2) and index finds the element index for a given value in a list, here count.index is used to loop through the variable list.
 
 * Create public subnets(4 public subnets are going to be created based that the Oregon region us-west-2 only has 4 Availability zones): One public subnet for each given AZ.
 
@@ -230,10 +230,20 @@ resource "aws_route_table_association" "terraform-private-route-table-to-private
 
 }
 ```
-Add the code below in the vpc_module(outputs.tf). Terraform outputs, here we add information that we want to export. Can be used as variable in other modules as well.
+In each module there is a file called "outputs.tf", in this file we add information that we want to export. The outputs added in the file "outputs.tf" can be used as variable in other modules as well, this is helpful, cause for example in this project we required the VPC id and private subnets ids in other modules, and to be able to use these ids we need to add them in the vpc_module(outputs.tf) file.
+
+Add the code below in the vpc_module(outputs.tf). 
 ```bash
 output "terraform_vpc_id" {
   value = aws_vpc.terraform-vpc.id
+}
+#The below output is added here to export the private subnets ids from this vpc_module,
+#this output is going to be required as variable from the autoscaling_group_module,
+#cause the autoscaling group is going to launch the EC2 instances using only private subnets,
+#this is why will need the private subnets ids
+
+output "terraform-private-subnet" {
+  value = aws_subnet.terraform-private-subnet.*.id
 }
 ```
 For example in this project we are using a Security Group for the AWS Infrastructure, to associate a Security Group to the VPC we need an output from the vpc_module to be used as variable in the sg_module.
@@ -288,7 +298,7 @@ output "terraform-allow-tls" {
 #
 ## Launch Configuration Module
 
-In the launch_configuration_module you are going to find the Terraform code that is required by the Autoscaling group module to be able to launch EC2 instances.
+In the launch_configuration_module you are going to find the Terraform code that is required by the Autoscaling Group module to be able to launch EC2 instances.
 
 Below we have 2 variables, 1 to indicate the instance type and the other to be able to use the security group from the module called "sg_module".
 
@@ -334,8 +344,9 @@ Below the Launch-configuration resource, we are also using 2 variables, 1 for th
 #This Terraform code needs to be inside the resources.tf file.
 #Here we need to add the data code in the image_id, as shown below.
 #image_id = data.aws_ami.amazon-linux-2.id
+#We are using Local values to avoid repeating the string "israel-terraform" and for the DateTime as well.
 resource "aws_launch_configuration" "terraform-launch-configuration" {
-  name_prefix     = "israel-terraform-launch-configuration"
+  name_prefix     = "${local.israel-tf}-launch-configuration-${local.lc-module-datetime}"
   image_id        = data.aws_ami.amazon-linux-2.id
   instance_type   = var.instance_type
   security_groups = [var.terraform-allow-tls]
@@ -360,7 +371,7 @@ output "terraform-launch-configuration" {
 
 Here we have the Autoscaling Group, the variable called "var.terraform-launch-configuration" allow to use the launch-configuration that we have in the other module called  "launch_configuration_module" but, to be able to use it we need to add "terraform-launch-configuration" as variable in this module, variable as type string, here we are also using a variable called "terraform-private-subnet" this is to allow the Autoscaling Group to launch EC2 instances in the private subnets only from the VPC we have in the module called "vpc_module".
 
-Here in the variables.tf file we have the variables for the autoscaling group.
+Here in the variables.tf file we have the variables for the Autoscaling Group.
 
 ```bash
 #This is the variable we need to be able to use the launch-configuration for the autoscaling group
@@ -375,10 +386,10 @@ variable "terraform-launch-configuration" {
 
 }
 ```
-The Autoscaling Group as shown below is going to let us launch 2 EC2 instances cause we have our min, max, and desired capacity as 2, this means that if for some reason an EC2 instance is stopped or terminated the Autoscaling Group is going to launch a new EC2 instance automatically. Main reason why we are using it here to help us to avoid having system downtime, 4 availability zones here cause we have the private subnets in different availability zones, this way the EC2 instance can be launch in any of the Availability zones this is also to prevent system downtime caused by outages.
+The Autoscaling Group as shown below is going to let us launch 2 EC2 instances cause we have our min, max, and desired capacity as 2, this means that if for some reason an EC2 instance is stopped or terminated the Autoscaling Group is going to launch a new EC2 instance automatically. Main reason why we are using it here to help us to avoid having system downtime, 4 availability zones here cause we have the private subnets in different availability zones, this way the EC2 instance can be launch in any of the Availability zones, this is also to prevent system downtime caused by outages.
 ```bash
 resource "aws_autoscaling_group" "terraform-asg" {
-  name                      = "israel-terraform-asg-hw3"
+  name                      = "${local.israel-tf}-asg-hw3-${local.asg-datetime}"
   vpc_zone_identifier       = var.terraform-private-subnet
   launch_configuration      = var.terraform-launch-configuration
   desired_capacity          = 2
@@ -414,7 +425,7 @@ Type terraform init, terraform init command is used to initialize a working dire
 ```bash
 terraform init
 ```
-Once the terraform init is completed, then Type terraform apply, terraform apply command executes the actions proposed, in this case action to create the AWS infrastructure based on the Terraform Template.
+Once terraform init is completed, then type terraform apply, terraform apply command executes the actions proposed, in this case action to create the AWS infrastructure based on the Terraform Template.
 
 ```bash
 terraform apply
@@ -439,12 +450,12 @@ Step 4: Open the host machine Linux terminal and type $terraform --version (it w
 
 ```bash
 terraform --version
-#You'll see a Terraform version like this(the version number may be different for you)
+#You'll see a Terraform version like this(the version number may be different for you).
 Terraform v1.1.9
 on linux_amd64
 ```
 
-Step 5: Open the host machine Linux terminal and type $aws configure(enter the AWS_ACCESS_KEY_ID, then the AWS_SECRET_ACCESS_KEY, hit enter if the region is correct otherwise type(us-west-2), then hit enter again for the output format(these steps will help to test that access to the AWS account is allow, cause to create an aws vpc and the rest of the vpc resources access to the aws account with the right permissions to create resources is required, otherwise create your AWS account with these permissions).
+Step 5: Open the host machine Linux terminal and type $aws configure(enter the AWS_ACCESS_KEY_ID, then the AWS_SECRET_ACCESS_KEY, hit enter if the region is correct otherwise type(us-west-2), then hit enter again for the output format(these steps will help to test that access to the AWS account is allow, cause to create an AWS VPC and the rest of the VPC resources, access to the AWS account with the right permissions to create resources is required, otherwise create your AWS account with these permissions).
 
 ```bash
 aws configure
@@ -457,15 +468,15 @@ Step 6: Clone the terraform_hw3 to your local machine.
 git clone https://github.com/IsraelAlonzoMoran/terraform_hw3.git
 
 ```
-Step 7: Once the "terraform_hw3" project is downloaded to the host machine, with $cd go to the directory that has the downloaded folder, example "$cd /home/alonzo/Downloads/terraform_hw3".
+Step 7: Once the "terraform_hw3" project is downloaded to the host machine, open the Linux Terminal and with $cd go to the directory that has the downloaded folder, example "$cd /home/alonzo/Downloads/terraform_hw3".
 
 Step 8: Once in the directory that has the "terraform_hw3.tf" file:
 
-Type terraform init, terraform init command is used to initialize a working directory containing Terraform configuration files
+Type terraform init, terraform init command is used to initialize a working directory containing Terraform configuration files.
 ```bash
 terraform init
 ```
-Once the terraform init is completed, then Type terraform apply, terraform apply command executes the actions proposed, in this case action to create the AWS infrastructure based on the Terraform Template.
+Once terraform init is completed, then type terraform apply, terraform apply command executes the actions proposed, in this case action to create the AWS infrastructure based on the Terraform Template.
 
 ```bash
 terraform apply
@@ -477,6 +488,6 @@ And last if you would like to destroy the AWS infrastructure you just created, r
 terraform destroy
 ```
 
-Step 9: Go to the AWS Console(https://aws.amazon.com/) select Sing in, enter your credentials, type vpc in the search option and review that the aws vpc and rest of resources have been created.
+Step 9: Go to the AWS Console(https://aws.amazon.com/) select Sing in, enter your credentials, type VPC in the search option and review that the AWS VPC and rest of resources have been created.
 
 That's all. Thank you.
